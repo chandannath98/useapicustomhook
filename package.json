@@ -1,0 +1,24 @@
+{
+    "name": "useapicustomhook",
+    "version": "1.0.8",
+    "description": "a hook for ease api calling and its state management",
+    "main": "index.tsx",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/chandannath98/react-native-my-custom-alert.git"
+    },
+    "keywords": [
+      "api",
+      "react-native"
+    ],
+    "author": "chandan_nath",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/chandannath98/react-native-my-custom-alert/issues"
+    },
+    "homepage": "https://github.com/chandannath98/react-native-my-custom-alert#readme"
+  }
+  
