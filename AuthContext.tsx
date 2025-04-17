@@ -1,16 +1,31 @@
 import React, { createContext, useContext } from 'react';
 import { AuthContext } from './useApiHook';
 
-// Create the Auth context
+// Define the type for customActions
+type ActionObject = {
+    codes: number[];
+    action: () => void;
+  };
+  
+  // Define a type for a list of ActionObject
+  type CustomActions = ActionObject[];
 
-// AuthProvider component
-export const AuthProvider = ({ children, logoutFunction }) => {
-  return (
-    <AuthContext.Provider value={{ logout: logoutFunction }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-// Hook to use logout from context
-export const useAuth = () => useContext(AuthContext);
+  
+  // Define the AuthProviderProps type
+  interface AuthProviderProps {
+    children: React.ReactNode;
+    logoutFunction?: () => void;
+    customActions?: CustomActions;
+    baseURL?:string;
+    token?:string;
+  }
+  
+  // Update the AuthProvider component
+  export const AuthProvider: React.FC<AuthProviderProps> = ({ children, logoutFunction, customActions,baseURL,token }) => {
+    return (
+      <AuthContext.Provider value={{ logout: logoutFunction, customActions,baseURL,token }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  };
+  
