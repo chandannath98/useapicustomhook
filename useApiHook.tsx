@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useRef, useState, useContext, createContext } from 'react';
-
+import {fetchDataFunc, FetchDataProps} from "./fetchFunction"
 // Action types
 const FETCH_INIT = 'FETCH_INIT';
 const FETCH_SUCCESS = 'FETCH_SUCCESS';
@@ -39,22 +39,52 @@ const dataFetchReducer = (state:State, action:Action) => {
   }
 };
 interface AuthContextType {
-  logout?: () => void;
-}
-const AuthContext = createContext<AuthContextType | null>(null);
+    logout?: () => void;
+    customActions?: ActionObjectList; // Add customActions type
+    baseURL?:string;
+    token?:string;
+  }
+  
+  // Define the ActionObject type (similar to what you defined previously)
+  type ActionObject = {
+    codes: number[];
+    action: () => void;
+  };
+  
+  type ActionObjectList = ActionObject[];
+  
+  // Update AuthContext
+  const AuthContext = createContext<AuthContextType | null>(null);
+  
 
 
-interface UseApiProps {
-  apiCallingFunction: (...params: any[]) => Promise<any>;
-  apiParameters: any[];
+  type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = 
+  Pick<T, Exclude<keyof T, Keys>> & 
+  { [K in Keys]-?: Required<Pick<T, K>> & Partial<Record<Exclude<Keys, K>, undefined>> }[Keys];
+
+interface BaseApiProps {
+  apiParameters?: any[];
   apiCustomReturnFunction?: (data: any) => any;
   onError?: (error: any) => void;
   runOnTimeOfScreenMount?: boolean;
   initialLoadingState?: boolean;
   initialData?: any;
   reFetchDependencies?: any[];
-  logoutFunction?: () => void; // Optional: Logout function passed as a prop
+  logoutFunction?: () => void;
 }
+
+interface ApiCallingFunctionProps {
+  apiCallingFunction: (...params: any[]) => Promise<any>;
+  apiConfig?: never;
+}
+
+interface ApiConfigProps {
+  apiCallingFunction?: never;
+  apiConfig: FetchDataProps;
+}
+
+type UseApiProps = RequireAtLeastOne<BaseApiProps & (ApiCallingFunctionProps | ApiConfigProps), 'apiCallingFunction' | 'apiConfig'>;
+
 // Hook that handles API calls and status codes
 const useApiHook = ({
   apiCallingFunction,
@@ -65,11 +95,13 @@ const useApiHook = ({
   initialLoadingState,
   initialData = null,
   reFetchDependencies = [],
+  apiConfig,
   logoutFunction, // Optional: Logout function can be passed as a prop
 }: UseApiProps) => {
   const authContext = useContext(AuthContext); // Use the AuthContext if available
   const finalLogoutFunction = authContext?.logout || logoutFunction; // Fallback to passed logoutFunction if context is not present
 
+  console.log(authContext)
   const initialState = {
     data: initialData,
     loading: !!initialLoadingState,
@@ -89,7 +121,36 @@ const useApiHook = ({
     if (showLoader) dispatch({ type: FETCH_INIT });
 
     try {
-      const response = await apiCallingFunction(...params);
+      let response
+      if(apiCallingFunction){
+
+        response = await apiCallingFunction(...params);
+      }else{
+        const url = authContext?.baseURL as string  
+        response = await fetchDataFunc({
+          ...apiConfig,
+          url:apiConfig?.url|| url ,
+          endpoint:apiConfig?.endpoint as string,
+          token:apiConfig?.token || authContext?.token,
+          body:params?params[0] : apiConfig?.body,
+
+
+
+        })
+      }
+
+      // console.log(response)
+
+       // Check custom actions before default cases
+       const customAction = authContext?.customActions?.find(actionObj =>
+        actionObj?.codes?.includes(response?.statusCode)
+      );
+      if (customAction) {
+        customAction.action();
+        return;
+      }
+
+
 
       switch (response?.statusCode) {
         // Informational responses
