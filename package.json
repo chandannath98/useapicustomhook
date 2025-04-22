@@ -1,6 +1,6 @@
 {
     "name": "useapicustomhook",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "a hook for ease api calling and its state management",
     "main": "index.tsx",
     "scripts": {
@@ -8,7 +8,7 @@
     },
     "repository": {
       "type": "git",
-      "url": "git+https://github.com/chandannath98/react-native-my-custom-alert.git"
+      "url": "git+https://github.com/chandannath98/useapicustomhook.git"
     },
     "keywords": [
       "api",
@@ -17,8 +17,8 @@
     "author": "chandan_nath",
     "license": "ISC",
     "bugs": {
-      "url": "https://github.com/chandannath98/react-native-my-custom-alert/issues"
+      "url": "https://github.com/chandannath98/useapicustomhook.git/issues"
     },
-    "homepage": "https://github.com/chandannath98/react-native-my-custom-alert#readme"
+    "homepage": "https://github.com/chandannath98/useapicustomhook.git#readme"
   }
   
