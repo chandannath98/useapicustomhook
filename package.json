@@ -1,6 +1,6 @@
 {
     "name": "useapicustomhook",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "a hook for ease api calling and its state management",
     "main": "index.tsx",
     "scripts": {
