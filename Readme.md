@@ -131,6 +131,17 @@ const { data, loading, error, fetchData, alterData } = useApiHook({
 
 ---
 
+
+## 3. `useAuth()`
+
+useAuth is used for get and set token at any point of your code.
+```tsx
+const { token, setToken } = useAuth();
+```
+---
+
+
+
 # 🔗 `apiConfig Props`
 
 
@@ -140,7 +151,7 @@ const { data, loading, error, fetchData, alterData } = useApiHook({
 |------|------|----------|
 | url | string | ✅(if not passed in AuthProvider) |
 | endpoint | string | ✅ |
-| method | 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | ❌ (default GET) |
+| method | 'GET' , 'POST' , 'PUT' , 'PATCH' , 'DELETE' | ❌ (default GET) |
 | body | any | ❌ |
 | token | string | ❌(can pass on AuthProvider also) |
 | headers | Record<string, string> | ❌ |

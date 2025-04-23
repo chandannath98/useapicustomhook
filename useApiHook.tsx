@@ -117,14 +117,16 @@ const useApiHook = ({
   };
 
   // Fetching function with status code handling
-  const fetchData = async (showLoader = true, params = apiParameters, customReturnFunc = apiCustomReturnFunction) => {
+  const fetchData = async ({showLoader = true, params = apiParameters, customReturnFunc = apiCustomReturnFunction}:{
+    showLoader?:boolean,params?:any[] |undefined,customReturnFunc?:((i:any)=>any)|undefined
+  }) => {
     if (showLoader) dispatch({ type: FETCH_INIT });
 
     try {
       let response
       if(apiCallingFunction){
-
-        response = await apiCallingFunction(...params);
+        const apiParams:any[] =params? [...params]:[]
+        response = await apiCallingFunction(...apiParams);
       }else{
         const url = authContext?.baseURL as string  
         response = await fetchDataFunc({
@@ -260,10 +262,10 @@ const useApiHook = ({
   };
 
   useEffect(() => {
-    if (runOnTimeOfScreenMount) fetchData();
+    if (runOnTimeOfScreenMount) fetchData({});
 
     if (JSON.stringify(reFetchDependencies) !== JSON.stringify(prevDependenciesRef.current)) {
-      fetchData();
+      fetchData({});
     }
 
     prevDependenciesRef.current = reFetchDependencies;
