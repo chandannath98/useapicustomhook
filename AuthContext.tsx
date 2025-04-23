@@ -23,10 +23,11 @@ type ActionObject = {
   // Update the AuthProvider component
   export const AuthProvider: React.FC<AuthProviderProps> = ({ children, logoutFunction, customActions,baseURL,token }) => {
 
-    const [accessToken, setAccessToken] = useState<string|null>(token)
+    const [accessToken, setAccessToken] = useState<string|null>(token);
+    const [url, setUrl] = useState(baseURL)
 
     return (
-      <AuthContext.Provider value={{ logout: logoutFunction, customActions,baseURL,token:accessToken, setToken:setAccessToken }}>
+      <AuthContext.Provider value={{ logout: logoutFunction, customActions,baseURL:url,token:accessToken, setToken:setAccessToken,setBaseURL:setUrl }}>
         {children}
       </AuthContext.Provider>
     );

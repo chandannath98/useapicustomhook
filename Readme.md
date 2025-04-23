@@ -134,9 +134,9 @@ const { data, loading, error, fetchData, alterData } = useApiHook({
 
 ## 3. `useAuth()`
 
-useAuth is used for get and set token at any point of your code.
+useAuth is used for get and set token and baseURL at any point of your code.
 ```tsx
-const { token, setToken } = useAuth();
+const { token, setToken ,baseURL,setBaseURL } = useAuth();
 ```
 ---
 
