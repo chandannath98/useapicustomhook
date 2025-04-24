@@ -8,7 +8,8 @@ There are two ways:
 | Option                  | How |
 |--------------------------|-----|
 | 1. Provide in `AuthProvider` 🌍 | `<AuthProvider baseURL="https://your-api.com" />` |
-| 2. Provide in `apiConfig` 🔧 | `apiConfig: { url: "https://your-api.com" }` |
+| 2. set throw `setBaseURL` 🌍 | `setBaseUrl("") using useAuth()` |
+| 3. Provide in `apiConfig` 🔧 | `apiConfig: { url: "https://your-api.com" }` |
 
 ✅ **One is required! Otherwise API calls will fail!**
 
@@ -81,6 +82,7 @@ Wrap your app with AuthProvider to share `logout`, `baseURL`, `token`, and `cust
 | `customActions` | `Array<{ codes: number[], action: () => void }>` | Custom actions based on status codes |
 | `baseURL` | `string` | API Base URL |
 | `token` | `string` | Auth token |
+| `customFetchFunction` | `(i:apiConfig Props)=>{data:any,status:number,error:string}` | Auth token |
 
 ---
 

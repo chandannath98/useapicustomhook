@@ -38,11 +38,15 @@ const dataFetchReducer = (state:State, action:Action) => {
       throw new Error('Unhandled action type');
   }
 };
-interface AuthContextType {
+export interface AuthContextType {
     logout?: () => void;
     customActions?: ActionObjectList; // Add customActions type
     baseURL?:string;
-    token?:string;
+    token:string|null|undefined;
+    customFetchFunction?:(i:FetchDataProps)=>{ data: any; statusCode: number|null; error: string|null|any };
+    setToken:(i:string)=>void
+    setBaseURL:(i:string)=>void
+
   }
   
   // Define the ActionObject type (similar to what you defined previously)
@@ -71,6 +75,7 @@ interface BaseApiProps {
   initialData?: any;
   reFetchDependencies?: any[];
   logoutFunction?: () => void;
+  debouncingLimit?:number
 }
 
 interface ApiCallingFunctionProps {
@@ -96,12 +101,17 @@ const useApiHook = ({
   initialData = null,
   reFetchDependencies = [],
   apiConfig,
+  debouncingLimit,
   logoutFunction, // Optional: Logout function can be passed as a prop
 }: UseApiProps) => {
   const authContext = useContext(AuthContext); // Use the AuthContext if available
   const finalLogoutFunction = authContext?.logout || logoutFunction; // Fallback to passed logoutFunction if context is not present
 
-  console.log(authContext)
+  const lastFetchTimestamps = useRef<Map<string, number>>(new Map());
+  const deduplicationInterval =debouncingLimit || 3000; // 3 seconds
+
+  
+
   const initialState = {
     data: initialData,
     loading: !!initialLoadingState,
@@ -120,6 +130,26 @@ const useApiHook = ({
   const fetchData = async ({showLoader = true, params = apiParameters, customReturnFunc = apiCustomReturnFunction}:{
     showLoader?:boolean,params?:any[] |undefined,customReturnFunc?:((i:any)=>any)|undefined
   }) => {
+
+    let endpointKey = '';
+
+    if (apiCallingFunction) {
+      endpointKey = apiCallingFunction.name || 'customFunction';
+    } else if (apiConfig?.endpoint) {
+      endpointKey = apiConfig.endpoint;
+    }
+  
+    const now = Date.now();
+    const lastFetched = lastFetchTimestamps.current.get(endpointKey) || 0;
+  
+    if (now - lastFetched < deduplicationInterval) {
+      console.log(`[Deduplication] Skipping API call for endpoint: ${endpointKey}`);
+      return; // Exit early because deduplication window is active
+    }
+  
+    lastFetchTimestamps.current.set(endpointKey, now);
+
+    
     if (showLoader) dispatch({ type: FETCH_INIT });
 
     try {
@@ -128,22 +158,27 @@ const useApiHook = ({
         const apiParams:any[] =params? [...params]:[]
         response = await apiCallingFunction(...apiParams);
       }else{
-        const url = authContext?.baseURL as string  
-        response = await fetchDataFunc({
+        const url = authContext?.baseURL as string;
+
+        const finalConfig = {
           ...apiConfig,
-          url:apiConfig?.url|| url ,
-          endpoint:apiConfig?.endpoint as string,
-          token:apiConfig?.token || authContext?.token,
-          body:params?params[0] : apiConfig?.body,
-
-
-
-        })
+          url: apiConfig?.url || url,
+          endpoint: apiConfig?.endpoint as string,
+          token: apiConfig?.token || authContext?.token || "",
+          body: params ? params[0] : apiConfig?.body,
+        };
+        
+        if (authContext?.customFetchFunction) {
+          response =await authContext.customFetchFunction(finalConfig);
+        } else {
+          response = await fetchDataFunc(finalConfig);
+        }
+        
       }
 
-      // console.log(response)
+   
 
-       // Check custom actions before default cases
+       //* Check custom actions before default cases
        const customAction = authContext?.customActions?.find(actionObj =>
         actionObj?.codes?.includes(response?.statusCode)
       );
@@ -155,7 +190,7 @@ const useApiHook = ({
 
 
       switch (response?.statusCode) {
-        // Informational responses
+        //* Informational responses
         case 100:
         case 101:
         case 102:
@@ -163,7 +198,7 @@ const useApiHook = ({
           if (onError) onError(response);
           break;
 
-        // Success codes
+        //* Success codes
         case 200:
         case 201:
         case 202:
@@ -178,7 +213,7 @@ const useApiHook = ({
           dispatch({ type: FETCH_SUCCESS, payload: data });
           break;
 
-        // Redirection codes
+        //* Redirection codes
         case 300:
         case 301:
         case 302:
@@ -191,7 +226,7 @@ const useApiHook = ({
           if (onError) onError(response);
           break;
 
-        // Client error responses
+        //* Client error responses
         case 400:
         case 402:
         
@@ -221,19 +256,19 @@ const useApiHook = ({
         case 431:
         case 451:
           if (onError) onError(response);
-        //  if(response?.data?.msg ) ToastAndroid.show(response?.data?.msg , ToastAndroid.LONG);
+        
           dispatch({ type: FETCH_ERROR, payload: response?.data?.msg || 'Client error' });
           break;
 
         case 401:
         case 403:
-          // Unauthorized - call the finalLogoutFunction (either from context or prop)
+          //* Unauthorized - call the finalLogoutFunction (either from context or prop)
           if (finalLogoutFunction) {
             finalLogoutFunction();
           }
           break;
 
-        // Server error responses
+        //* Server error responses
         case 500:
         case 501:
         case 502:
@@ -253,6 +288,9 @@ const useApiHook = ({
           break;
 
         default:
+         
+          if (onError) onError(response);
+
           dispatch({ type: FETCH_ERROR, payload: 'Unexpected status code' });
       }
     } catch (error:any) {

@@ -1,12 +1,14 @@
-import { useContext } from 'react';
-import { AuthContext } from './useApiHook';
+import { useContext } from "react";
+import { AuthContext } from "./useApiHook";
 
 export const useAuth = () => {
-  const { token, setToken,baseURL,setBaseURL } = useContext(AuthContext);
+  const context = useContext(AuthContext);
 
-  if (token === undefined || setToken === undefined) {
-    console.warn('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
 
-  return { token, setToken,baseURL,setBaseURL };
+  const { token, setToken, baseURL, setBaseURL } = context;
+
+  return { token, setToken, baseURL, setBaseURL };
 };
