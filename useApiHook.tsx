@@ -76,6 +76,7 @@ interface BaseApiProps {
   reFetchDependencies?: any[];
   logoutFunction?: () => void;
   debouncingLimit?:number
+  isEnabled?:boolean
 }
 
 interface ApiCallingFunctionProps {
@@ -102,13 +103,14 @@ const useApiHook = ({
   reFetchDependencies = [],
   apiConfig,
   debouncingLimit,
+  isEnabled=true,
   logoutFunction, // Optional: Logout function can be passed as a prop
 }: UseApiProps) => {
   const authContext = useContext(AuthContext); // Use the AuthContext if available
   const finalLogoutFunction = authContext?.logout || logoutFunction; // Fallback to passed logoutFunction if context is not present
 
   const lastFetchTimestamps = useRef<Map<string, number>>(new Map());
-  const deduplicationInterval =debouncingLimit || 3000; // 3 seconds
+  const deduplicationInterval =debouncingLimit || 0; // 3 seconds
 
   
 
@@ -127,9 +129,10 @@ const useApiHook = ({
   };
 
   // Fetching function with status code handling
-  const fetchData = async ({showLoader = true, params = apiParameters, customReturnFunc = apiCustomReturnFunction}:{
+  async function _fetchData   ({showLoader = true, params = apiParameters, customReturnFunc = apiCustomReturnFunction}:{
+    
     showLoader?:boolean,params?:any[] |undefined,customReturnFunc?:((i:any)=>any)|undefined
-  }) => {
+  })  {
 
     let endpointKey = '';
 
@@ -138,11 +141,14 @@ const useApiHook = ({
     } else if (apiConfig?.endpoint) {
       endpointKey = apiConfig.endpoint;
     }
+    endpointKey =endpointKey + JSON.stringify(params)
   
     const now = Date.now();
     const lastFetched = lastFetchTimestamps.current.get(endpointKey) || 0;
   
     if (now - lastFetched < deduplicationInterval) {
+    // console.log("[Deduplication] Skipping API call for endpoint======",params)
+
       console.log(`[Deduplication] Skipping API call for endpoint: ${endpointKey}`);
       return; // Exit early because deduplication window is active
     }
@@ -299,15 +305,45 @@ const useApiHook = ({
     }
   };
 
+  async function fetchData(
+    showLoader_or_api_arg?:
+      | boolean
+      | {
+        showLoader?:boolean,params?:any[] | undefined,customReturnFunc?:((i:any)=>any)|undefined
+        },
+    params_arg2?: any[],
+    customRetunFunction_arg3?: (i: any) => any
+  ) {
+    let showLoader: boolean, params: any[], customReturnFunc: (i: any) => any |undefined;
+  
+    if (typeof showLoader_or_api_arg === "object" && showLoader_or_api_arg !== null) {
+      // New usage
+      ({ showLoader = true, params = apiParameters as any[] , customReturnFunc = apiCustomReturnFunction as (i: any) => any } = showLoader_or_api_arg);
+    } else {
+      // Old usage
+      showLoader = showLoader_or_api_arg ?? true;
+      params =( params_arg2 ?? apiParameters)  as any[] ;
+      customReturnFunc = (customRetunFunction_arg3 ?? apiCustomReturnFunction) as (i: any) => any ;
+    
+    }
+  
+    return _fetchData({ showLoader, params, customReturnFunc });
+  }
+  
+
+ 
+
   useEffect(() => {
+    if(isEnabled){
     if (runOnTimeOfScreenMount) fetchData({});
 
     if (JSON.stringify(reFetchDependencies) !== JSON.stringify(prevDependenciesRef.current)) {
       fetchData({});
     }
+  }
 
     prevDependenciesRef.current = reFetchDependencies;
-  }, [...reFetchDependencies]);
+  }, [...reFetchDependencies,isEnabled]);
 
   return { ...state, fetchData, alterData };
 };
